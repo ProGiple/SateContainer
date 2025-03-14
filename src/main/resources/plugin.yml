@@ -1,0 +1,25 @@
+name: SateContainer
+version: '${project.version}'
+main: org.satellite.dev.progiple.satecontainer.SateContainer
+api-version: '1.16'
+depend:
+  - WorldGuard
+  - LunaSpring
+  - DecentHolograms
+  - NBTAPI
+  - Vault
+softdepend:
+  - PlaceholderAPI
+commands:
+  satecontainer:
+    aliases:
+      - sc
+      - container
+      - scontainer
+permissions:
+  satecontainer.admin:
+    default: op
+  satecontainer.delay:
+    default: true
+  satecontainer.compass:
+    default: true

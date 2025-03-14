@@ -1,0 +1,8 @@
+items:
+  1:
+    material: OAK_WOOD
+    displayName: ""
+    lore: []
+    amount: 8
+    money_cost: 1900-2200
+    commands: []

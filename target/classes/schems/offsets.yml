@@ -1,0 +1,5 @@
+example_schem:
+  offset_x: 0
+  offset_y: 0
+  offset_z: 0
+  ignoreAirBlocks: true

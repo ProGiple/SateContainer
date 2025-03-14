@@ -1,0 +1,72 @@
+settings:
+  getRewardTime: 5 # раз в сколько секунд получать конечный результат награды?
+  refreshItemTime: 10 # раз в сколько тиков обновлять в слоте возможную награду?
+  maxItemsLoot: 3 # сколько наград из items.yml может быть за всё лутание?
+  money_drop: 100-3000 # За 1 крутку слота сколько может выпасть монет?
+  money_multiplier: 1.35 # За каждую крутку слота на сколько увеличиться множитель для след. крутки?
+  itemLootChance: 10.0 # какой шанс на то что след. крутка слота будет предметом?
+  findLocationAttempts: 15
+  hologramHeight: 2.6
+  hologram:
+    - Material.SPAWNER
+    - "{name}"
+  event:
+    name: "&bДвухсотый груз"
+    regionSize: 24
+    block: SPAWNER
+    world: world
+    maxX: 1000 # поставьте 0 чтобы было до конца границы мира
+    maxZ: 1000 # поставьте 0 чтобы было до конца границы мира
+    lifeTime: 120
+    spawn_timers:
+      - "12:00"
+      - "16:00"
+    invalid_biomes:
+      - "OCEAN"
+menu:
+  title: "&0Контейнер"
+  rows: 4
+  decorations:
+    1:
+      material: GRAY_STAINED_GLASS_PANE
+      lore: []
+      displayName: "&b"
+      slots:
+        - 0-8
+        - 27-35
+  money_slot:
+    material: YELLOW_STAINED_GLASS_PANE
+    lore: []
+    displayName: "&e{cost}"
+  full_inv_slot:
+    material: RED_STAINED_GLASS_PANE
+    lore: []
+    displayName: "&c{cost}"
+messages:
+  message_on_start_event:
+    - "ACTION_BAR{4} &fпоявился на &b{0} {1} {2}"
+    - "TITLE{4}{S}{0} {1} {2}"
+  message_on_bugged_event:
+    - "&bБаг"
+  message_on_stop_event:
+    - "Конец"
+  all_loot_collected:
+    - ""
+  container_is_opened:
+    - ""
+  check_coordinates:
+    - "{0} {1} {2} {3}"
+  noPermission: []
+  usage:
+    - "/scontainer reload"
+    - "/scontainer stop"
+    - "/scontainer start"
+    - "/scontainer delay"
+    - "/scontainer check"
+  reload_plugin:
+    - "reloaded!"
+  is_started_now: []
+  no_running_event: []
+  delay:
+    - "next {0} -> {1}"
+  get_money: []
