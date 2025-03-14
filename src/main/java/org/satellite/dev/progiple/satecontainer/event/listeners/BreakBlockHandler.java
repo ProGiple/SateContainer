@@ -6,6 +6,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.satellite.dev.progiple.satecontainer.event.Container;
 import org.satellite.dev.progiple.satecontainer.event.ContainerEvent;
+import org.satellite.dev.progiple.satecontainer.event.ContainerManager;
 
 public class BreakBlockHandler implements Listener {
     @EventHandler
@@ -13,7 +14,7 @@ public class BreakBlockHandler implements Listener {
         Block block = e.getClickedBlock();
         if (block == null) return;
 
-        ContainerEvent event = ContainerEvent.getEvent();
+        ContainerEvent event = ContainerManager.getEvent();
         if (event == null) return;
 
         Container container = event.getContainer();

@@ -52,6 +52,10 @@ public class Config {
         return config.getStringList(path);
     }
 
+    public List<Integer> getIntList(String path) {
+        return config.getIntList(path);
+    }
+
     @SuppressWarnings("deprecation")
     public void sendMessage(CommandSender sender, String id, String... replacements) {
         List<String> message = new ArrayList<>(config.getStringList(String.format("messages.%s", id)));

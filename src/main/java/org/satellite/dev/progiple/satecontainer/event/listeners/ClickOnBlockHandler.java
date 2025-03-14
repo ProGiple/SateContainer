@@ -8,20 +8,21 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.novasparkle.lunaspring.Events.CooldownPrevent;
 import org.satellite.dev.progiple.satecontainer.event.Container;
 import org.satellite.dev.progiple.satecontainer.event.ContainerEvent;
+import org.satellite.dev.progiple.satecontainer.event.ContainerManager;
 
 public class ClickOnBlockHandler implements Listener {
     private final CooldownPrevent<Block> cooldown;
     public ClickOnBlockHandler() {
         this.cooldown = new CooldownPrevent<>();
-        this.cooldown.setCooldownMS(10);
+        this.cooldown.setCooldownMS(25);
     }
 
     @EventHandler
     public void onClick(PlayerInteractEvent e) {
         Block block = e.getClickedBlock();
-        if (block == null || e.getAction() != Action.RIGHT_CLICK_BLOCK || this.cooldown.cancelEvent(null, block)) return;
+        if (block == null || e.getAction() != Action.RIGHT_CLICK_BLOCK || this.cooldown.isCancelled(null, block)) return;
 
-        ContainerEvent event = ContainerEvent.getEvent();
+        ContainerEvent event = ContainerManager.getEvent();
         if (event == null) return;
 
         Container container = event.getContainer();

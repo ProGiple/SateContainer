@@ -5,11 +5,13 @@ import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
 import org.novasparkle.lunaspring.Menus.MenuManager;
 import org.novasparkle.lunaspring.Util.Utils;
 import org.novasparkle.lunaspring.Util.managers.RegionManager;
@@ -28,36 +30,25 @@ import java.util.stream.Stream;
 
 @Getter
 public class ContainerEvent {
-    @Getter private static ContainerEvent event;
-
     private Container container = null;
     private Location location = null;
     private EditSession editSession = null;
+    @Setter private Player menuViewer = null;
+
     private String regionId;
     private int taskId;
     public ContainerEvent() {
-        if (event != null) return;
-
+        if (ContainerManager.getEvent() != null) return;
         ConfigurationSection eventSection = Config.getSection("settings.event");
-        World world = Bukkit.getWorld(Objects.requireNonNull(eventSection.getString("world")));
-        int maxX = eventSection.getInt("maxX");
-        int maxZ = eventSection.getInt("maxZ");
+
         int regionSize = eventSection.getInt("regionSize");
+        World world = Bukkit.getWorld(Objects.requireNonNull(eventSection.getString("world")));
 
-        List<String> invalidBiomes = eventSection.getStringList("invalid_biomes");
+        this.initLocation(eventSection, world, regionSize);
+        this.start(eventSection, world, regionSize);
+    }
 
-        assert world != null;
-        int attempts = Config.getInt("settings.findLocationAttempts");
-        while (this.location == null && attempts > 0) {
-            Location location = Utils.findRandomLocation(world, maxX, maxZ);
-            location.add(0, 1, 0);
-            if (!RegionManager.hasRegionsInside(location, regionSize + 1) &&
-                    !invalidBiomes.contains(location.getBlock().getBiome().name())) {
-                this.location = location;
-                break;
-            }
-            else attempts--;
-        }
+    public void start(ConfigurationSection eventSection, World world, int regionSize) {
         if (this.location != null) {
             Location minLoc = this.location.clone().add(-regionSize, -regionSize, -regionSize);
             Location maxLoc = this.location.clone().add(regionSize, regionSize, regionSize);
@@ -73,33 +64,7 @@ public class ContainerEvent {
             region.setFlag(Flags.MUSHROOMS, StateFlag.State.DENY);
             region.setFlag(Flags.WITHER_DAMAGE, StateFlag.State.DENY);
 
-            File schemDir = new File(SateContainer.getPlugin().getDataFolder(), "schems");
-            if (schemDir.exists() && schemDir.isDirectory()) {
-                File[] files = schemDir.listFiles();
-                if (files != null) {
-                    List<File> fileList = Stream.of(files)
-                            .filter(file -> file.getName().contains(".schem"))
-                            .collect(Collectors.toList());
-                    if (!fileList.isEmpty()) {
-                        int index = Math.min(Utils.getRandom().nextInt(fileList.size()), fileList.size() - 1);
-                        File schem = fileList.get(index);
-
-                        ConfigurationSection section = OffsetsConfig.getSection(
-                                schem.getName().replace(".schem", ""));
-                        if (section != null) {
-                            int offsetY = section.getInt("offset_y");
-                            this.editSession = WorldEditManager.pasteSchematic(
-                                    schem, this.location,
-                                    section.getInt("offset_x"),
-                                    offsetY,
-                                    section.getInt("offset_z"),
-                                    section.getBoolean("ignoreAirBlocks"));
-                            this.location.add(0, offsetY, 0);
-                        }
-                    }
-                }
-            }
-
+            this.pasteSchematic();
             this.container = new Container(this.location,
                     Utils.color(Objects.requireNonNull(eventSection.getString("name"))));
 
@@ -113,13 +78,62 @@ public class ContainerEvent {
                             String.valueOf(this.location.getBlockZ()),
                             world.getName(),
                             this.container.getName()));
-            event = this;
+            ContainerManager.setEvent(this);
         }
         else this.end(true);
     }
 
+    private void pasteSchematic() {
+        File schemDir = new File(SateContainer.getPlugin().getDataFolder(), "schems");
+        if (schemDir.exists() && schemDir.isDirectory()) {
+            File[] files = schemDir.listFiles();
+            if (files != null) {
+                List<File> fileList = Stream.of(files)
+                        .filter(file -> file.getName().contains(".schem"))
+                        .collect(Collectors.toList());
+                if (!fileList.isEmpty()) {
+                    int index = Math.min(Utils.getRandom().nextInt(fileList.size()), fileList.size() - 1);
+                    File schem = fileList.get(index);
+
+                    ConfigurationSection section = OffsetsConfig.getSection(
+                            schem.getName().replace(".schem", ""));
+                    if (section != null) {
+                        int offsetY = section.getInt("offset_y");
+                        this.editSession = WorldEditManager.pasteSchematic(
+                                schem, this.location,
+                                section.getInt("offset_x"),
+                                offsetY,
+                                section.getInt("offset_z"),
+                                section.getBoolean("ignoreAirBlocks"));
+                        this.location.add(0, offsetY, 0);
+                    }
+                }
+            }
+        }
+    }
+
+    public void initLocation(ConfigurationSection eventSection, World world, int regionSize) {
+        int maxX = eventSection.getInt("maxX");
+        int maxZ = eventSection.getInt("maxZ");
+
+        List<String> invalidBiomes = eventSection.getStringList("invalid_biomes");
+
+        assert world != null;
+        int attempts = Config.getInt("settings.findLocationAttempts");
+        while (this.location == null && attempts > 0) {
+            Location location = Utils.findRandomLocation(world, maxX, maxZ);
+            location.add(0, 1, 0);
+            if (!RegionManager.hasRegionsInside(location, regionSize + 1) &&
+                    !invalidBiomes.contains(location.getBlock().getBiome().name())) {
+                this.location = location;
+                break;
+            }
+            else attempts--;
+        }
+    }
+
     public void end(boolean bugged) {
-        if (!event.equals(this)) return;
+        if (!ContainerManager.getEvent().equals(this)) return;
 
         if (this.container != null) {
             this.container.delete();
@@ -136,6 +150,6 @@ public class ContainerEvent {
                 Config.sendMessage(player, messageId, this.container.getName()));
 
         RegionManager.removeRegion(this.regionId);
-        event = null;
+        ContainerManager.setEvent(null);
     }
 }

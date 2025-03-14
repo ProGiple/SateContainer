@@ -11,6 +11,7 @@ import org.satellite.dev.progiple.satecontainer.configs.Config;
 import org.satellite.dev.progiple.satecontainer.configs.ItemsConfig;
 import org.satellite.dev.progiple.satecontainer.configs.OffsetsConfig;
 import org.satellite.dev.progiple.satecontainer.event.ContainerEvent;
+import org.satellite.dev.progiple.satecontainer.event.ContainerManager;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -31,18 +32,18 @@ public class Command implements CommandExecutor, TabCompleter {
                             Config.sendMessage(commandSender, "reload_plugin");
                         }
                         else if (strings[0].equalsIgnoreCase("start")) {
-                            if (ContainerEvent.getEvent() != null) Config.sendMessage(commandSender, "is_started_now");
+                            if (ContainerManager.getEvent() != null) Config.sendMessage(commandSender, "is_started_now");
                             else new ContainerEvent();
                         }
                         else if (strings[0].equalsIgnoreCase("stop")) {
-                            if (ContainerEvent.getEvent() == null) Config.sendMessage(commandSender, "no_running_event");
-                            else ContainerEvent.getEvent().end(false);
+                            if (ContainerManager.getEvent() == null) Config.sendMessage(commandSender, "no_running_event");
+                            else ContainerManager.end();
                         }
                         else if (strings[0].equalsIgnoreCase("tp")) {
-                            if (ContainerEvent.getEvent() == null) Config.sendMessage(commandSender, "no_running_event");
+                            if (ContainerManager.getEvent() == null) Config.sendMessage(commandSender, "no_running_event");
                             else if (commandSender instanceof Player) {
                                 Player player = (Player) commandSender;
-                                player.teleport(ContainerEvent.getEvent().getLocation().clone().add(0.5, 1.5, 0.5));
+                                player.teleport(ContainerManager.getEvent().getLocation().clone().add(0.5, 1.5, 0.5));
                             }
                         }
                     }
@@ -61,7 +62,7 @@ public class Command implements CommandExecutor, TabCompleter {
                 }
                 case "compass", "check", "coordinates", "coords" -> {
                     if (commandSender.hasPermission("satecontainer.compass")) {
-                        ContainerEvent event = ContainerEvent.getEvent();
+                        ContainerEvent event = ContainerManager.getEvent();
                         if (event == null || event.getLocation() == null) {
                             Config.sendMessage(commandSender, "no_running_event");
                             return true;

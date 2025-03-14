@@ -12,41 +12,46 @@ import org.bukkit.inventory.ItemStack;
 import org.novasparkle.lunaspring.Menus.AMenu;
 import org.satellite.dev.progiple.satecontainer.SateContainer;
 import org.satellite.dev.progiple.satecontainer.configs.Config;
+import org.satellite.dev.progiple.satecontainer.event.ContainerManager;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
 public class CMenu extends AMenu {
-    @Getter private static Player opened = null;
-
     private int taskId;
     private final Set<LootItem> items = new HashSet<>();
+    private final List<Integer> loot_slots;
     public CMenu(Player player) {
         super(player, Config.getString("menu.title"),
                 (byte) (Config.getInt("menu.rows") * 9), Config.getSection("menu.decorations"));
+        this.loot_slots = new ArrayList<>(Config.getIntList("menu.loot_slots"));
     }
 
     @Override
     public void onOpen(InventoryOpenEvent e) {
         int timer = Config.getInt("settings.getRewardTime");
-        this.getDecoration().insert(this);
         Player player = this.getPlayer();
 
-        opened = player;
+        ContainerManager.getEvent().setMenuViewer(player);
         this.taskId = Bukkit.getScheduler().runTaskTimerAsynchronously(SateContainer.getPlugin(), () -> {
-            byte slot = this.getEmptySlot(this.getInventory());
-            if (slot <= -1) {
-                Bukkit.getScheduler().cancelTask(this.taskId);
-                Bukkit.getScheduler().runTask(SateContainer.getPlugin(), () -> player.closeInventory());
-                Config.sendMessage(player, "all_loot_collected");
-            }
+            byte slot = this.getNextSlot();
+            if (slot <= -1) this.closeInv(player);
             else {
                 LootItem lootItem = new LootItem(this, timer * 20, slot);
                 this.items.add(lootItem);
+                this.loot_slots.remove(0);
                 lootItem.insert(this, slot);
             }
         }, 0, (timer + 1) * 20L).getTaskId();
+    }
+
+    public void closeInv(Player player) {
+        Bukkit.getScheduler().cancelTask(this.taskId);
+        Bukkit.getScheduler().runTask(SateContainer.getPlugin(), () -> player.closeInventory());
+        Config.sendMessage(player, "all_loot_collected");
     }
 
     @Override
@@ -56,7 +61,7 @@ public class CMenu extends AMenu {
 
     @Override
     public void onClose(InventoryCloseEvent e) {
-        opened = null;
+        ContainerManager.getEvent().setMenuViewer(null);
         this.items.forEach(item -> {
             int taskId = item.getTaskId();
             if (Bukkit.getScheduler().isCurrentlyRunning(taskId) || Bukkit.getScheduler().isQueued(taskId))
@@ -67,15 +72,7 @@ public class CMenu extends AMenu {
             Bukkit.getScheduler().cancelTask(this.taskId);
     }
 
-    private byte getEmptySlot(Inventory inventory) {
-        byte slot = -1;
-        for (byte i = 0; i < inventory.getSize(); i++) {
-            ItemStack item = inventory.getItem(i);
-            if (item == null || item.getType() == Material.AIR) {
-                slot = i;
-                break;
-            }
-        }
-        return slot;
+    private byte getNextSlot() {
+        return (byte) (this.loot_slots.isEmpty() ? -1 : this.loot_slots.get(0));
     }
 }

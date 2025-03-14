@@ -12,3 +12,4 @@ org\satellite\dev\progiple\satecontainer\configs\Config.class
 org\satellite\dev\progiple\satecontainer\SateContainer.class
 org\satellite\dev\progiple\satecontainer\event\Container.class
 org\satellite\dev\progiple\satecontainer\event\listeners\ClickOnBlockHandler.class
+org\satellite\dev\progiple\satecontainer\event\ContainerManager.class

@@ -39,7 +39,10 @@ public class LootItem extends Item {
         super(Material.STONE);
         this.setSlot(slot);
         this.cMenu = menu;
+        this.startRefreshItem(timer);
+    }
 
+    private void startRefreshItem(int timer) {
         int refreshTime = Config.getInt("settings.refreshItemTime");
         Player player = this.cMenu.getPlayer();
 
@@ -47,59 +50,7 @@ public class LootItem extends Item {
         this.taskId = Bukkit.getScheduler().runTaskTimer(SateContainer.getPlugin(), () -> {
             if (usedTime.get() >= timer) {
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-
-                int items = (int) this.cMenu.getItems().stream().filter(i -> !i.isMoney).count();
-                ConfigurationSection section;
-                double cost = -1;
-
-                if (items >= Config.getInt("settings.maxItemsLoot")
-                        || Config.getDouble("settings.itemLootChance") / 100 < Math.random())
-                    section = Config.getSection("menu.money_slot");
-                else {
-                    Inventory inventory = player.getInventory();
-                    boolean hasEmptySlot = IntStream.range(0, inventory.getSize() - 5)
-                            .mapToObj(inventory::getItem)
-                            .anyMatch(item -> item == null || item.getType() == Material.AIR);
-
-                    List<String> keys = new ArrayList<>(ItemsConfig.getSection("items").getKeys(false));
-                    int index = Math.min(Utils.getRandom().nextInt(keys.size()), keys.size() - 1);
-
-                    ConfigurationSection itemSection = ItemsConfig.getSection(String.format("items.%s", keys.get(index)));
-                    section = hasEmptySlot ? itemSection : Config.getSection("menu.full_inv_slot");
-
-                    this.isMoney = false;
-                    if (hasEmptySlot) cost = LootItem.getRandomCost(Objects.requireNonNull(itemSection.getString("money_cost")));
-                }
-
-                if (cost <= -1) cost = LootItem.getRandomCost(Config.getString("settings.money_drop"));
-
-                this.setAll(section);
-                if (!this.cMenu.getItems().isEmpty())
-                    cost *= Math.pow(Config.getDouble("settings.money_multiplier"),
-                            (Math.max(this.cMenu.getItems().size() - items, 1)));
-                int finalCost = (int) Math.round(cost);
-
-                this.setDisplayName(this.getDisplayName().replace("{cost}", String.valueOf(finalCost)));
-                List<String> lore = new ArrayList<>(this.getLore());
-
-                lore.replaceAll(line -> line.replace("{cost}", String.valueOf(finalCost)));
-                this.setLore(lore);
-                if (!this.isMoney && section.getKeys(false).contains("commands")) {
-                    List<String> commands = new ArrayList<>(section.getStringList("commands"));
-                    if (!commands.isEmpty()) {
-                        commands.forEach(command -> Bukkit.dispatchCommand(
-                                Bukkit.getConsoleSender(), command
-                                        .replace("{player}", player.getName())
-                                        .replace("{cost}", String.valueOf(finalCost))));
-                    }
-                    else player.getInventory().addItem(new ItemStack(this.getMaterial(), this.getAmount()));
-                }
-                else {
-                    Vault.getEconomy().depositPlayer(player, finalCost);
-                    Config.sendMessage(player, "get_money", String.valueOf(finalCost));
-                }
-
-                Bukkit.getScheduler().cancelTask(this.taskId);
+                this.placeReward(player);
             }
             else {
                 int index = Math.min(Utils.getRandom().nextInt(materials.size()), materials.size() - 1);
@@ -111,6 +62,61 @@ public class LootItem extends Item {
             }
             this.insert(this.cMenu);
         }, 0, refreshTime).getTaskId();
+    }
+
+    private void placeReward(Player player) {
+        int items = (int) this.cMenu.getItems().stream().filter(i -> !i.isMoney).count();
+        ConfigurationSection section;
+        double cost = -1;
+
+        if (items >= Config.getInt("settings.maxItemsLoot")
+                || Config.getDouble("settings.itemLootChance") / 100 < Math.random())
+            section = Config.getSection("menu.money_slot");
+        else {
+            Inventory inventory = player.getInventory();
+            boolean hasEmptySlot = IntStream.range(0, inventory.getSize() - 5)
+                    .mapToObj(inventory::getItem)
+                    .anyMatch(item -> item == null || item.getType() == Material.AIR);
+
+            List<String> keys = new ArrayList<>(ItemsConfig.getSection("items").getKeys(false));
+            int index = Math.min(Utils.getRandom().nextInt(keys.size()), keys.size() - 1);
+
+            ConfigurationSection itemSection = ItemsConfig.getSection(String.format("items.%s", keys.get(index)));
+            section = hasEmptySlot ? itemSection : Config.getSection("menu.full_inv_slot");
+
+            this.isMoney = false;
+            if (hasEmptySlot) cost = LootItem.getRandomCost(Objects.requireNonNull(itemSection.getString("money_cost")));
+        }
+
+        if (cost <= -1) cost = LootItem.getRandomCost(Config.getString("settings.money_drop"));
+
+        this.setAll(section);
+        if (!this.cMenu.getItems().isEmpty())
+            cost *= Math.pow(Config.getDouble("settings.money_multiplier"),
+                    (Math.max(this.cMenu.getItems().size() - items, 1)));
+        int finalCost = (int) Math.round(cost);
+
+        this.setDisplayName(this.getDisplayName().replace("{cost}", String.valueOf(finalCost)));
+        List<String> lore = new ArrayList<>(this.getLore());
+
+        lore.replaceAll(line -> line.replace("{cost}", String.valueOf(finalCost)));
+        this.setLore(lore);
+        if (!this.isMoney && section.getKeys(false).contains("commands")) {
+            List<String> commands = new ArrayList<>(section.getStringList("commands"));
+            if (!commands.isEmpty()) {
+                commands.forEach(command -> Bukkit.dispatchCommand(
+                        Bukkit.getConsoleSender(), command
+                                .replace("{player}", player.getName())
+                                .replace("{cost}", String.valueOf(finalCost))));
+            }
+            else player.getInventory().addItem(new ItemStack(this.getMaterial(), this.getAmount()));
+        }
+        else {
+            Vault.getEconomy().depositPlayer(player, finalCost);
+            Config.sendMessage(player, "get_money", String.valueOf(finalCost));
+        }
+
+        Bukkit.getScheduler().cancelTask(this.taskId);
     }
 
     private static int getRandomCost(String str) {

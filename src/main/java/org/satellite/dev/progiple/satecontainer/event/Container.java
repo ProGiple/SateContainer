@@ -42,9 +42,10 @@ public class Container {
     }
 
     public void click(Player player) {
-        if (this.block == null) return;
+        ContainerEvent event = ContainerManager.getEvent();
+        if (this.block == null || event == null) return;
 
-        if (CMenu.getOpened() == null) MenuManager.openInventory(player, new CMenu(player));
-        else Config.sendMessage(player, "container_is_opened", CMenu.getOpened().getName());
+        if (event.getMenuViewer() == null) MenuManager.openInventory(player, new CMenu(player));
+        else Config.sendMessage(player, "container_is_opened", event.getMenuViewer().getName());
     }
 }

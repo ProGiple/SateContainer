@@ -6,6 +6,7 @@ import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 import org.satellite.dev.progiple.satecontainer.configs.Config;
 import org.satellite.dev.progiple.satecontainer.event.ContainerEvent;
+import org.satellite.dev.progiple.satecontainer.event.ContainerManager;
 
 import java.time.LocalTime;
 
@@ -32,7 +33,7 @@ public class Placeholder extends PlaceholderExpansion {
 
     @Override
     public String onRequest(OfflinePlayer player, @NotNull String params) {
-        ContainerEvent event = ContainerEvent.getEvent();
+        ContainerEvent event = ContainerManager.getEvent();
         Location location = event == null ? null : event.getLocation();
 
         if (params.equalsIgnoreCase("x")) {
