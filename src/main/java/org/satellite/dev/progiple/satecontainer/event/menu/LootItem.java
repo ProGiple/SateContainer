@@ -37,12 +37,11 @@ public class LootItem extends Item {
     private int taskId = 0;
     public LootItem(CMenu menu, int timer, byte slot) {
         super(Material.STONE);
-        this.setSlot(slot);
         this.cMenu = menu;
-        this.startRefreshItem(timer);
+        this.startRefreshItem(timer, slot);
     }
 
-    private void startRefreshItem(int timer) {
+    private void startRefreshItem(int timer, byte slot) {
         int refreshTime = Config.getInt("settings.refreshItemTime");
         Player player = this.cMenu.getPlayer();
 
@@ -55,12 +54,12 @@ public class LootItem extends Item {
             else {
                 int index = Math.min(Utils.getRandom().nextInt(materials.size()), materials.size() - 1);
                 Material material = materials.get(index);
-                this.setMaterial(material);
+                this.setAll(material, 1, " ", null, false);
 
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
                 usedTime.addAndGet(refreshTime);
             }
-            this.insert(this.cMenu);
+            this.insert(this.cMenu, slot);
         }, 0, refreshTime).getTaskId();
     }
 

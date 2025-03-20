@@ -9,9 +9,9 @@ import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 import org.novasparkle.lunaspring.Menus.MenuManager;
 import org.novasparkle.lunaspring.Util.Utils;
 import org.novasparkle.lunaspring.Util.managers.RegionManager;
@@ -34,6 +34,7 @@ public class ContainerEvent {
     private Location location = null;
     private EditSession editSession = null;
     @Setter private Player menuViewer = null;
+    @Setter private BukkitTask menuTask;
 
     private String regionId;
     private int taskId;
@@ -144,6 +145,7 @@ public class ContainerEvent {
         if (this.editSession != null && this.location != null) WorldEditManager.undo(this.editSession, this.location.getWorld());
         if (Bukkit.getScheduler().isQueued(this.taskId) || Bukkit.getScheduler().isCurrentlyRunning(this.taskId))
             Bukkit.getScheduler().cancelTask(this.taskId);
+        this.stopMenuScroll();
 
         String messageId = bugged ? "message_on_bugged_event" : "message_on_stop_event";
         Bukkit.getOnlinePlayers().forEach(player ->
@@ -151,5 +153,9 @@ public class ContainerEvent {
 
         RegionManager.removeRegion(this.regionId);
         ContainerManager.setEvent(null);
+    }
+
+    public void stopMenuScroll() {
+        if (this.menuTask != null) this.menuTask.cancel();
     }
 }
